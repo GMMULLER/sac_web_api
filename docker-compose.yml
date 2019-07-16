@@ -6,8 +6,8 @@ services:
       context: .
       dockerfile: dockerFiles/web.dockerfile
 
-    ports:
-        - 5000:80
+    expose:
+        - 5000
     
     volumes:
       - ./src:/var/www/html
