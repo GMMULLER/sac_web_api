@@ -7,7 +7,7 @@ services:
       dockerfile: dockerFiles/web.dockerfile
 
     expose:
-        - 5000
+      - 5000
     
     volumes:
       - ./src:/var/www/html
