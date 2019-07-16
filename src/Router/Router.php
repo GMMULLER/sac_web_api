@@ -8,18 +8,14 @@ include_once './Controllers/Controller.php';
 
 class Router{
     private $routes = [];
-    private $request_data;
-
-    function __construct($request_data){
-        $this->request_data = $request_data;            
-    }
 
     public function on($method, $path, $callback){
         $method = strtolower($method);
-        if(!isset($this->routes[$method])){
+        if(!isset($this->routes[$method])){ // Se essa é a primeira rota para esse método
             $this->routes[$method] = [];
         }
 
+        // Atrela a função passada como parâmetro a um método e uma rota
         $uri = substr($path, 0, 1) !== '/' ? '/'. $path : $path;
         $pattern = str_replace('/', '\/', $uri);
         $route = '/^' . $pattern . '$/';
@@ -30,26 +26,21 @@ class Router{
 
     function run($method, $uri){
         $method = strtolower($method);
-        if(!isset($this->routes[$method])){
+        if(!isset($this->routes[$method])){ // Caso não existam rotas para esse método
+            http_response_code(400);    
             return null;
         }
 
         foreach($this->routes[$method] as $route => $callback){
             if(preg_match($route, $uri, $parameters)){
-                array_shift($parameters);
-                if($parameters[0] != NULL){
-                    return call_user_func_array($callback, $parameters);
-                }else{
-                    return call_user_func($callback, $this->request_data);
-                }
+                array_shift($parameters); // Exclui o match total e deixa só os parâmetros
+                return call_user_func_array($callback, $parameters);
             }
         }
 
-        return null;
-
+        http_response_code(400);    
+        return null; // Caso essa rota não exista
     }
-
-
 }
 
 ?>
