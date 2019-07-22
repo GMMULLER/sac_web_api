@@ -7,7 +7,7 @@ services:
       dockerfile: dockerFiles/web.dockerfile
 
     expose:
-      - 80
+      - 8080
     
     volumes:
       - ./src:/var/www/html
