@@ -14,7 +14,7 @@ Para iniciar:
 
     docker-compose up
 
-Por padrão o projeto é inicializado na porta 5000 (<http://localhost:5000/tickets>)
+Por padrão o projeto é inicializado na porta 80 (<http://localhost:80/tickets>)
 
 ## Rotas
 
