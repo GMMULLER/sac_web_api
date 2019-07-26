@@ -2,7 +2,6 @@ FROM php:7.2-apache
 
 COPY . /app
 
-WORKDIR /app
 RUN a2enmod rewrite
 RUN service apache2 restart
 RUN apt-get update
