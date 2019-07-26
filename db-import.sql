@@ -19,7 +19,3 @@ CREATE TABLE `ticket` (
 ALTER TABLE `ticket`
   ADD PRIMARY KEY (`ticket_id`);
 COMMIT;
-
-INSERT INTO `ticket` ( `ticket_id`, `nome`, `email`, `telefone`, `mensagem`, `aberto` )
-   VALUES
-   ( "555555", "teste", "teste@gmail.com", "9999999", "ola", "1" );
