@@ -1,6 +1,6 @@
 # sudo a2enmod modrewrite
 
-#Options +FollowSymLinks
+Options +Indexes
 
 #RewriteEngine On
 #RewriteCond %{REQUEST_FILENAME} !-f
