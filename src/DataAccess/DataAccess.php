@@ -8,50 +8,55 @@
 
     class DataAccess{
 
+        public static $instance;
+
         private $host;
         private $user;
         private $password;
         private $database;
         private $conn;
 
-        function __construct(){
-            // Recupera as variáveis de ambiente criadas no arquivo docker-compose.yml
-            $explode_result = explode(";", $_ENV["ConnectionString"]);
-            $env_variables = [];
-            foreach($explode_result as $variable){
-                $variable_explode = explode("=", $variable);
-                $env_variables[$variable_explode[0]] = $variable_explode[1];
+        private function __construct(){
+        }
+
+        public static function getInstance(){
+            if(!isset(self::$instance)){
+                self::$instance = new DataAccess();
+                self::$instance->connect();
             }
 
-            $this->host = $env_variables["Server"];
-            $this->user = $env_variables["Uid"];
-            $this->password = $env_variables["Pwd"];
-            $this->database = $env_variables["Database"];
+            return self::$instance;
+        }
+
+        public function connect(){
+            $this->host = $_ENV["SAC_DB_HOST"];
+            $this->user = $_ENV["SAC_DB_USER"];
+            $this->password = $_ENV["SAC_DB_PASSWORD"];
+            $this->database = $_ENV["SAC_DB_NAME"];
 
             $this->conn = new \mysqli($this->host, $this->user, $this->password, $this->database);
-            
             if ($this->conn->connect_errno) {
-                echo "Failed to connect to MySQL: " . $this->conn->connect_error;
+		        throw new \Exception($this->conn->connect_error);
             }
         }
 
         public function abrirTicket($ticket){
             $sql = "INSERT INTO sac_web_api.ticket 
-                        (ticket_id,nome,email,telefone,mensagem)
+                        (ticket_id,nome,email,telefone,mensagem,assunto)
                     VALUES
-                        (?,?,?,?,?);";
+                        (?,?,?,?,?,?);";
             
             $stmt = $this->conn->prepare($sql);
 
             if(!$stmt){
-                return 0;
+                throw new \Exception("db stmt preparation failed");
+                return;
             }
 
-            $stmt->bind_param("sssss",$ticket->ticketId,$ticket->nome,$ticket->email,$ticket->telefone,$ticket->mensagem);
+            $stmt->bind_param("ssssss",$ticket->ticketId,$ticket->nome,$ticket->email,$ticket->telefone,$ticket->mensagem,$ticket->assunto);
             $stmt->execute();
             $stmt->close();
 
-            return 1;
         }
 
         public function getTodosTickets(){
@@ -61,17 +66,21 @@
                         email Email,
                         telefone Telefone,
                         mensagem Mensagem,
-                        aberto Aberto
+                        aberto Aberto,
+                        assunto Assunto
                     FROM
                         sac_web_api.ticket;";
 
             $result = $this->conn->query($sql);
-            $result = $result->fetch_all();
-            
-            $this->conn->close();
-            if($result == NULL){
-                return 0;
+
+            if(!$result){
+                throw new \Exception("db query failed");
+                $this->conn->close();
+                return;
             }
+
+	        $result = $result->fetch_all();
+            $this->conn->close();
             return $result;
         }
 
@@ -81,7 +90,8 @@
             $stmt = $this->conn->prepare($sql);
         
             if(!$stmt){
-                return 0;
+                throw new \Exception("db stmt preparation failed");
+                return;
             }
 
             $stmt->bind_param("s",$id);
@@ -97,7 +107,8 @@
             $stmt = $this->conn->prepare($sql);
 
             if(!$stmt){
-                return 0;
+                throw new \Exception("db stmt preparation failed");
+                return;
             }
             
             $stmt->bind_param("s",$id);
@@ -105,6 +116,95 @@
             $stmt->close();
 
             return $id;         
+        }
+
+        public function getTickets(){
+            $sql = "SELECT
+                        ticket_id TicketId,
+                        nome NomeDeUsuario,
+                        email Email,
+                        telefone Telefone,
+                        mensagem Mensagem,
+                        aberto Aberto,
+                        assunto Assunto
+                    FROM
+                        sac_web_api.ticket";
+
+            $cod = mysqli_real_escape_string($this->conn, $_GET["cod"]);
+            $limit = mysqli_real_escape_string($this->conn, $_GET["limit"]);
+            $skip = mysqli_real_escape_string($this->conn, $_GET["skip"]);
+            $pag_sql = "";
+
+            if($limit != null && $skip != null){
+                $pag_sql = $pag_sql." LIMIT $limit";
+                $pag_sql = $pag_sql." OFFSET $skip";
+
+            }
+
+            $sql = $sql.$pag_sql;
+
+            $search_sql = [];
+
+            $id = mysqli_real_escape_string($this->conn, $_GET["id"]);
+            if($id != null){
+                $search_sql[] = "ticket_id='$id'"; 
+            }
+
+            $nome = mysqli_real_escape_string($this->conn, $_GET["name"]);
+            if($nome != null){
+                $search_sql[] = "nome='$nome'";
+            }
+
+            $email = mysqli_real_escape_string($this->conn, $_GET["email"]);
+            if($email != null){
+                $search_sql[] = "email='$email'";
+            }
+
+            $phone = mysqli_real_escape_string($this->conn, $_GET["phone"]);
+            if($phone != null){
+                $search_sql[] = "telefone='$phone'";
+            }
+
+            $message = mysqli_real_escape_string($this->conn, $_GET["message"]);
+            if($message != null){
+                $search_sql[] = "mensagem='$message'";
+            }
+
+            $status = mysqli_real_escape_string($this->conn, $_GET["status"]);
+            if($status != null){
+                $search_sql[] = "aberto=$status";
+            }else if($cod != "all"){
+                $search_sql[] = "aberto=1";
+            }
+
+            $subject = mysqli_real_escape_string($this->conn, $_GET["subject"]);
+            if($subject != null){
+                $search_sql[] = "assunto='$subject'";
+            }
+
+            
+            if(!empty($search_sql) && $limit == null && $skip == null){
+                $aux = array_pop($search_sql);
+                $sql = $sql." WHERE $aux";
+                foreach($search_sql as $value){
+                    $sql = $sql." AND $value";
+                }
+            }            
+
+            $sql = $sql.";";
+
+            $result = $this->conn->query($sql);
+
+            if(!$result){
+                throw new \Exception("db query failed");
+                $this->conn->close();
+                return;
+            }
+
+	        $result = $result->fetch_all();        
+            $this->conn->close();
+			return $result;
+
         }
 
     }

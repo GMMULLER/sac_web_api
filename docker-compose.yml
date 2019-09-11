@@ -5,24 +5,27 @@ services:
     build:
       context: .
       dockerfile: dockerFiles/web.dockerfile
-
-    expose:
-      - 80
     
-    volumes:
-      - ./src:/var/www/html
+    expose:
+        - 80
     
     depends_on:
       - sac-db
   
     environment:
-      - ConnectionString=Server=sac-db;Port=3306;Database=sac_web_api;Uid=sac_web_api_ufjf;Pwd=s@cw3b4p1;
+      SAC_DB_HOST: sac-db
+      SAC_DB_PORT: 3306
+      SAC_DB_NAME: sac_web_api
+      SAC_DB_USER: sac_web_api_ufjf
+      SAC_DB_PASSWORD: s@cw3b4p1
+      
   sac-db:
-    image: mysql:5.7
+    build: 
+      context: .
+      dockerfile: dockerFiles/db.dockerfile
 
     volumes:
       - ./database:/var/lib/mysql
-      - ./db-import.sql:/docker-entrypoint-initdb.d/dump.sql
     
     environment: 
       MYSQL_ROOT_PASSWORD: root

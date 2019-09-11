@@ -1,99 +1,87 @@
 <?php
-    use SAC_WebAPI\Router\Router;
     use SAC_WebAPI\Controllers\Controller;
     use SAC_WebAPI\DataAccess\DataAccess;
+    use SAC_WebAPI\Response\Response;
+	use SAC_WebAPI\Exceptions\InvalidTicketException;
 
-    include_once './Router/Router.php';
     include_once './Models/Ticket.php';
     include_once './DataAccess/DataAccess.php';
     include_once './Controllers/Controller.php';
+    include_once './Response/Response.php';
+    include_once './Exceptions/InvalidTicketException.php';
 
-    header("Access-Control-Allow-Origin: *");
-    header("Content-Type: application/json; charset=UTF-8");
-    header("HTTP/1.1 200 OK");
+    require __DIR__ . '/vendor/autoload.php';
 
-    $router = new Router();
+    $router = new \Bramus\Router\Router();
+    	
+    $router->get('/tickets', function () {
+		$response = new Response();
 
-    // Cria as rotas
-    $router->on('GET', 'tickets', function () {
-        $dataAccess = new DataAccess();
-        $controller = new Controller($dataAccess);
-        return $controller->getTodosTickets();
+		try{
+			$dataAccess = DataAccess::getInstance();
+			$controller = new Controller($dataAccess);
+			$response->send($controller->getTodosTickets());
+		}catch(Exception $e){		
+			$response->status(500)->error($e->getMessage())->send();		
+		}
+
     });
     
-    $router->on('POST', 'tickets', function () {
-        $dataAccess = new DataAccess();
-        $controller = new Controller($dataAccess);
-        $json = file_get_contents('php://input'); // Pega o body da requisição como uma string
-        $data = json_decode($json); 
-        $nome = $data->userName;
-        $email = $data->userEmail;
-        $telefone = $data->userPhone;
-        $mensagem = $data->userMessage;
-        if($nome == NULL || $email == NULL || $telefone == NULL || $mensagem == NULL){
-            header("invalidField: Campo(s) invalido(s)");
-            return -1;
-        }
-        return $controller->abrirTicket($nome, $email, $telefone, $mensagem);
+    $router->post('/tickets', function () {
+		$response = new Response();
+		
+		try{
+			$dataAccess = DataAccess::getInstance();
+			$controller = new Controller($dataAccess);
+			$json = file_get_contents('php://input'); // Pega o body da requisição como uma string
+			$data = json_decode($json);
+			$nome = $data->name;
+			$email = $data->email;
+			$telefone = $data->phone;
+			$mensagem = $data->message;
+			$assunto = $data->subject;
+
+			$valid = $controller->abrirTicket($nome, $email, $telefone, $mensagem, $assunto);
+			$response->status(201)->send();
+
+		}catch(InvalidTicketException $e){
+			$response->status(400)->send($e->getData());	
+		}catch(Exception $e){
+			$response->status(500)->error($e->getMessage())->send();
+		}
+
     });
     
-    $router->on('PUT', 'tickets/(\w+)', function ($parameters) {
-        $dataAccess = new DataAccess();
-        $controller = new Controller($dataAccess);
-        return $controller->fecharTicket($parameters);
+    $router->put('/tickets/(\w+)', function ($parameters) {
+		$response = new Response();
+		try{
+			$dataAccess = DataAccess::getInstance();
+			$dataAccess->fecharTicket($parameters);
+			$response->send();
+		}catch(Exception $e){
+			$response->status(500)->error($e->getMessage())->send();
+			return;
+		}  
     });
 
-    $router->on('DELETE', 'tickets/(\w+)', function ($parameters) {
-        $dataAccess = new DataAccess();
-        $controller = new Controller($dataAccess);
-        return $controller->excluirTicket($parameters);
-    });
-    
-    $router->on('OPTIONS', 'tickets', function () {
-        header("Access-Control-Allow-Methods: POST, GET, OPTIONS, PUT, DELETE");
-        header("Access-Control-Max-Age: 86400");
-    });
-    
+    $router->delete('/tickets/(\w+)', function ($parameters) {
+		$response = new Response();
+		try{
+			$dataAccess = DataAccess::getInstance();
+			$dataAccess->excluirTicket($parameters);
+			$response->send();
+		}catch(Exception $e){
+			$response->status(500)->error($e->getMessage())->send();
+			return;
+		}  
+			
+	});
+		
+	$router->options('/tickets', function () {
+		$response = new Response();  		
+		$response->header("Access-Control-Allow-Methods: POST, GET, OPTIONS, PUT, DELETE");
+		$response->header("Access-Control-Max-Age: 86400")->send();
+	});
 
-    $uri = '/'.$_GET['path']; // Recupera o caminho
-
-    $value = $router->run($_SERVER['REQUEST_METHOD'], $uri);
-
-    if($_SERVER['REQUEST_METHOD'] == 'GET'){ // Transforma as informações em JSON
-        $outp = [];
-        if(is_array($value)){
-            foreach($value as $key => $line){
-                $outp[$key]["ticketId"] = $line[0];
-                $outp[$key]["userName"] = $line[1];
-                $outp[$key]["userEmail"] = $line[2];
-                $outp[$key]["userPhone"] = $line[3];
-                $outp[$key]["userMessage"] = $line[4];
-                $outp[$key]["ticketStatus"] = $line[5];
-            }
-            echo json_encode($outp);
-        }else{ // Caso o db esteja vazio ou o caminho está incorreto
-            http_response_code(204);
-        }
-    }else if($_SERVER['REQUEST_METHOD'] == 'POST'){
-        if($value == 0 ){
-            http_response_code(500);    
-        }else if($value == -1){
-            http_response_code(400);                
-        }else{
-            http_response_code(201);    
-        }
-    }else if($_SERVER['REQUEST_METHOD'] == 'PUT'){
-        if($value == 0){
-            http_response_code(500);
-        }else{
-            http_response_code(204);
-        }
-    }else if($_SERVER['REQUEST_METHOD'] == 'DELETE'){
-        if($value == 0){
-            http_response_code(500);
-        }else{
-            http_response_code(204);            
-        }
-    }
-
+	$router->run();
 ?>
