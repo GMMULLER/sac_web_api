@@ -10,7 +10,7 @@
     include_once './Response/Response.php';
     include_once './Exceptions/InvalidTicketException.php';
 
-    require './vendor/autoload.php';
+    //require __DIR__ . '/vendor/autoload.php';
 
     $router = new \Bramus\Router\Router();
     	
