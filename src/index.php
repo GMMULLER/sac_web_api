@@ -2,7 +2,7 @@
     use SAC_WebAPI\Controllers\Controller;
     use SAC_WebAPI\DataAccess\DataAccess;
     use SAC_WebAPI\Response\Response;
-	use SAC_WebAPI\Exceptions\InvalidTicketException;
+		use SAC_WebAPI\Exceptions\InvalidTicketException;
 
     include_once './Models/Ticket.php';
     include_once './DataAccess/DataAccess.php';
@@ -10,7 +10,7 @@
     include_once './Response/Response.php';
     include_once './Exceptions/InvalidTicketException.php';
 
-    //require __DIR__ . '/vendor/autoload.php';
+    require __DIR__ . '/vendor/autoload.php';
 
     $router = new \Bramus\Router\Router();
     	
