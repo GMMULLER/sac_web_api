@@ -29,10 +29,15 @@
         }
 
         public function connect(){
-            $this->host = $_ENV["SAC_DB_HOST"];
-            $this->user = $_ENV["SAC_DB_USER"];
-            $this->password = $_ENV["SAC_DB_PASSWORD"];
-            $this->database = $_ENV["SAC_DB_NAME"];
+            // $this->host = $_ENV["SAC_DB_HOST"];
+            // $this->user = $_ENV["SAC_DB_USER"];
+            // $this->password = $_ENV["SAC_DB_PASSWORD"];
+            // $this->database = $_ENV["SAC_DB_NAME"];
+
+            $this->host = "sac-db";
+            $this->user = "sac_web_api_ufjf";
+            $this->password = "s@cw3b4p1";
+            $this->database = "sac_web_api";
 
             $this->conn = new \mysqli($this->host, $this->user, $this->password, $this->database);
             if ($this->conn->connect_errno) {
