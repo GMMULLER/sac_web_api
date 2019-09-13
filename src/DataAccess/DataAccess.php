@@ -198,7 +198,6 @@
             if(!$result){
                 throw new \Exception("db query failed");
                 $this->conn->close();
-                echo $sql;
                 return;
             }
 
