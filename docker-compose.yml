@@ -27,8 +27,8 @@ services:
     # volumes:
     #   - ./database:/var/lib/mysql
     
-    environment: 
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: sac_web_api
-      MYSQL_USER: sac_web_api_ufjf
-      MYSQL_PASSWORD: s@cw3b4p1
+    # environment: 
+    #   MYSQL_ROOT_PASSWORD: root
+    #   MYSQL_DATABASE: sac_web_api
+    #   MYSQL_USER: sac_web_api_ufjf
+    #   MYSQL_PASSWORD: s@cw3b4p1
